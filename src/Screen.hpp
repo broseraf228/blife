@@ -1,0 +1,20 @@
+#pragma once
+#include <string>
+#include <vector>
+#include <iostream>
+
+
+class Screen {
+private:
+	std::vector<std::vector<std::string>> m_screen;
+
+	int m_x, m_y;
+
+public:
+	Screen(int x, int y);
+
+	void draw_textel(std::string symbol, int x,int y);
+	void clear();
+
+	void display();
+};
