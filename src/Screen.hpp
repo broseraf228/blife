@@ -10,7 +10,6 @@ struct pair { int x; int y; };
 class Screen 
 {
 public:
-	Screen();
 	Screen(std::string name, World* world);
 	void recalculateDisplaySettings();
 

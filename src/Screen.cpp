@@ -10,20 +10,14 @@ extern int WINDOW_SIZE_Y;
 extern int WORLD_SIZE_X;
 extern int WORLD_SIZE_Y;
 extern std::string CURRENT_FOLDER;
+extern int timing;
 extern float mouseX; extern float mouseY;
 
 extern bool pause;
 extern int step;
 extern clock_t start_graphic, end_graphic, start_world, end_world;
 
-Screen::Screen()
-{
-	m_beetlsList = 0;
 
-	m_window.create(sf::VideoMode(WINDOW_SIZE_X, WINDOW_SIZE_Y), "noName");
-	m_screen_size_x = 0; m_screen_size_y = 0;
-	m_mode = 0;
-}
 Screen::Screen(std::string name, World* world)
 {
 	m_world = world;
@@ -65,7 +59,6 @@ void Screen::drawVertexes() {
 void Screen::addBeetleToGraphicArray(Beetle* beetle, sf::Color& color) {
 	if (beetle == nullptr)
 		return;
-	Beetle& lBeetle = (*beetle);
 	m_beetleBodyVertexArray.append(sf::Vertex{
 				sf::Vector2f(
 					((*beetle).m_pos_x + (*beetle).m_rot_x * (*beetle).m_size),
@@ -73,77 +66,48 @@ void Screen::addBeetleToGraphicArray(Beetle* beetle, sf::Color& color) {
 				color });
 	m_beetleBodyVertexArray.append(sf::Vertex{
 		sf::Vector2f(
-			((*beetle).m_pos_x - (*beetle).m_rot_y * (*beetle).m_size / 2),
-			((*beetle).m_pos_y + (*beetle).m_rot_x * (*beetle).m_size / 2)),
+			((*beetle).m_pos_x - (*beetle).m_rot_y * (*beetle).m_size * 0.5),
+			((*beetle).m_pos_y + (*beetle).m_rot_x * (*beetle).m_size * 0.5)),
 		color });
 	m_beetleBodyVertexArray.append(sf::Vertex{
 		sf::Vector2f(
-			((*beetle).m_pos_x + (*beetle).m_rot_y * (*beetle).m_size / 2),
-			((*beetle).m_pos_y - (*beetle).m_rot_x * (*beetle).m_size / 2)),
+			((*beetle).m_pos_x + (*beetle).m_rot_y * (*beetle).m_size * 0.5),
+			((*beetle).m_pos_y - (*beetle).m_rot_x * (*beetle).m_size * 0.5)),
 		color });
-
-	drawVertexes();
 }
 
 void Screen::drawWorld()
 {
 	std::vector<Beetle>& beetls = *(m_beetlsList);
+	int bitleSize = beetls.size();
 
 	float max = 0; float color = 0;
 
 	switch (m_mode)
 	{
 	case 0:
-		for (int i = 0; i < beetls.size(); i++)
+		for (int i = 0; i < bitleSize; i++)
 		{
-			addBeetleToGraphicArray(&beetls[i], sf::Color(100,200,100,200));
+			addBeetleToGraphicArray(&((*m_beetlsList)[i]), sf::Color(100,200,100,200));
 		}
 		break;
 	case 1:
 
-		for (int i = 0; i < beetls.size(); i++)
+		for (int i = 0; i < bitleSize; i++)
 		{
 			color = beetls[i].m_energy / 2;
-			m_beetleBodyVertexArray.append(sf::Vertex{
-				sf::Vector2f(
-					(beetls[i].m_pos_x + beetls[i].m_rot_x * beetls[i].m_size),
-					(beetls[i].m_pos_y + beetls[i].m_rot_y * beetls[i].m_size)),
-				sf::Color(200,color,color,255) });
-			m_beetleBodyVertexArray.append(sf::Vertex{
-				sf::Vector2f(
-					(beetls[i].m_pos_x - beetls[i].m_rot_y * beetls[i].m_size / 2),
-					(beetls[i].m_pos_y + beetls[i].m_rot_x * beetls[i].m_size / 2)),
-				sf::Color(200,color,color,255) });
-			m_beetleBodyVertexArray.append(sf::Vertex{
-				sf::Vector2f(
-					(beetls[i].m_pos_x + beetls[i].m_rot_y * beetls[i].m_size / 2),
-					(beetls[i].m_pos_y - beetls[i].m_rot_x * beetls[i].m_size / 2)),
-				sf::Color(200,color,color,255) });
+			addBeetleToGraphicArray(&((*m_beetlsList)[i]), sf::Color(255, color, color, 200));
 		}
 		break;
 	case 2:
-		for (int i = 0; i < beetls.size(); i++) {
+		for (int i = 0; i < bitleSize; i++) {
 			if (beetls[i].m_age > max) max = beetls[i].m_age;
 		}
 
-		for (int i = 0; i < beetls.size(); i++)
+		for (int i = 0; i < bitleSize; i++)
 		{
 			color = (beetls[i].m_age) / max * 100;
-			m_beetleBodyVertexArray.append(sf::Vertex{
-				sf::Vector2f(
-					(beetls[i].m_pos_x + beetls[i].m_rot_x * beetls[i].m_size),
-					(beetls[i].m_pos_y + beetls[i].m_rot_y * beetls[i].m_size)),
-				sf::Color(color,color,color,200) });
-			m_beetleBodyVertexArray.append(sf::Vertex{
-				sf::Vector2f(
-					(beetls[i].m_pos_x - beetls[i].m_rot_y * beetls[i].m_size / 2),
-					(beetls[i].m_pos_y + beetls[i].m_rot_x * beetls[i].m_size / 2)),
-				sf::Color(color,color,color,200) });
-			m_beetleBodyVertexArray.append(sf::Vertex{
-				sf::Vector2f(
-					(beetls[i].m_pos_x + beetls[i].m_rot_y * beetls[i].m_size / 2),
-					(beetls[i].m_pos_y - beetls[i].m_rot_x * beetls[i].m_size / 2)),
-				sf::Color(color,color,color,200) });
+			addBeetleToGraphicArray(&((*m_beetlsList)[i]), sf::Color(color, color, color, 200));
 		}
 		break;
 	}
@@ -160,7 +124,7 @@ void Screen::drawBeetleStat(Beetle* beetle) {
 	sf::Text text;
 	text.setFont(m_font);
 	text.setFillColor(sf::Color::White);
-	text.setCharacterSize(8);
+	text.setCharacterSize(12);
 	text.setPosition(sf::Vector2f(m_screen_size_x + 10, 0));
 	std::string string = "";
 
@@ -193,10 +157,11 @@ void Screen::drawSystem() {
 	sf::Text text;
 	text.setFont(m_font);
 	text.setFillColor(sf::Color::White);
-	text.setCharacterSize(8);
+	text.setCharacterSize(12);
 	text.setPosition(sf::Vector2f(m_screen_size_x + 10, m_screen_size_y - 100));
 	std::string string = "";
 
+	string.append("timing: " + std::to_string(timing) + "\n");
 	string.append("step: " + std::to_string(step) + "\n");
 	string.append("beetls: " + std::to_string((*m_world).getBeetlsList()->size()) + "\n");
 	string.append("world time: " + std::to_string(((double)end_world - start_world) / ((double)CLOCKS_PER_SEC)) + "\n");
@@ -206,8 +171,12 @@ void Screen::drawSystem() {
 	m_window.draw(text);
 
 
-	sf::RectangleShape rect;
+	string = std::string("LMB - select bot\nF1 - default mode\nF2 - energy mode\nF3 - age mode\nW - don't draw workd\n\n0-3 : fotosinthes\n4-7 : move\n8-11 : rotate\n12-12 : clone\n13-15 : hunt\n21 - if on top  ");
+	text.setPosition(sf::Vector2f(m_screen_size_x + 200, 0));
+	text.setString(string);
+	m_window.draw(text);
 	//----draw menu-----
+	sf::RectangleShape rect;
 	rect.setPosition(sf::Vector2f(m_screen_size_x, 0));
 	rect.setSize(sf::Vector2f(2, m_screen_size_y));
 

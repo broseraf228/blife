@@ -9,9 +9,10 @@ class Beetle {
 public:
 	Beetle(float x, float y);
 	Beetle(float x, float y, float rx, float ry);
-	Beetle(float x, float y, float rx, float ry, std::vector<int> i_genome);
-	Beetle(float x, float y, float rx, float ry, std::vector<int> i_genome, World* world);
+	Beetle(float x, float y, float rx, float ry, std::vector<short> i_genome);
+	Beetle(float x, float y, float rx, float ry, std::vector<short> i_genome, World* world);
 	void setWorld(World* world);
+	void setID(int id);
 
 	int update();
 
@@ -20,14 +21,15 @@ public:
 
 	float m_pos_x; float m_pos_y; float m_rot_x; float m_rot_y;
 
-	std::vector<int> m_genome;
+	std::vector<short> m_genome;
 	int m_genomeCounter{ 0 };
 
 	float m_energy{ 100 };
 	int m_age{ 0 };
 	int m_size{ 10 };
+	int m_id{ 0 };
 private:
-	int getGenComm(int ctr);
+	short getGenComm(short ctr);
 	World* m_world;
 };
 
