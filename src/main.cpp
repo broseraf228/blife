@@ -3,29 +3,32 @@
 #include <chrono>
 #include <thread>
 #include <time.h>
+#include <mutex>
 #include "Screen.hpp"
 #include "World.hpp"
 #include "Beetl.hpp"
 #include <SFML/Graphics.hpp>
 
+//TODO: починить систему координат; помянять команды генома полностью  
+
 int WINDOW_SIZE_X = 1600;
 int WINDOW_SIZE_Y = 800;
-int WORLD_SIZE_X = 1000;
-int WORLD_SIZE_Y = 700;
+int WORLD_SIZE_X = 1600;
+int WORLD_SIZE_Y = 1200;
 std::string CURRENT_FOLDER;
 int step = 0; float mouseX = 0; float mouseY = 0;
 bool pause = false;
 bool display_world = true;
-int timing = 100;
+int timing = 5;
 
 
 int selectedBeetlID = 0;
 
 clock_t start_graphic, end_graphic, start_world, end_world;
 
-World* lWorld;
+World* lWorld; Screen* lScreen;
 
-void statistic();
+void statisticDraw();
 
 int main(int argc, char* argv[])
 {
@@ -58,17 +61,14 @@ int main(int argc, char* argv[])
 	Screen screen("Window", lWorld);
 	sf::RenderWindow& window = screen.getWindow();
 	screen.setMode(0);
+	lScreen = &screen;
 
 	std::cout << "\tcomplete" << std::endl;
 	std::cout << "complete" << std::endl;
 
-	//std::vector<int> genome(64, 0);
-	//for (int i = 0; i < 10; i++) {
-	//	for (int j = 0; j < genome.size(); j++)
-	//		genome[j] = rand() % (genome.size());
-	//	world.addBeetle(rand() % WORLD_SIZE_X, rand() % WORLD_SIZE_Y, 1, 0, 100, genome);
-	//}
-	world.addBeetle(WORLD_SIZE_X / 2, 40, 1, 0);
+	for (int i = 0; i < 5000; i++) {
+		world.addBeetle(rand() % WORLD_SIZE_X, rand() % WORLD_SIZE_Y, 1, 0, float(rand() % 10)/10.0-0.5, float(rand() % 10) / 10.0 - 0.5, 100, std::vector<short>(64,0));
+	}
 
 	while (window.isOpen())
 	{
@@ -128,21 +128,23 @@ int main(int argc, char* argv[])
 		if (world.findById(selectedBeetlID) == nullptr) {
 			selectedBeetlID = 0;
 		}
-		
+
 		//-----------------------
 		if (!pause) {
 			start_world = clock();
-			world.update();
+			try { world.update(); }
+			catch (const char* error_message) { std::cout << error_message << std::endl; }
 			step++;
 			end_world = clock();
 		}
 		//-----------=-----
-		screen.drawSystem();
 
 		start_graphic = clock();
 
-		if (display_world)
-			screen.drawWorld();
+		if (display_world) {
+			try { screen.drawWorld(); }
+			catch (const char* error_message) { std::cout << error_message << std::endl; }
+		}
 		if (selectedBeetlID != 0) {
 			screen.addBeetleToGraphicArray(world.findById(selectedBeetlID), sf::Color(255,255,255,255));
 			screen.drawBeetleStat(world.findById(selectedBeetlID));
@@ -151,6 +153,7 @@ int main(int argc, char* argv[])
 		screen.clear();
 
 		end_graphic = clock();
+		screen.drawSystem();
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(int(timing - 100*(((double)end_world - start_world) / ((double)CLOCKS_PER_SEC) + ((double)end_graphic - start_graphic) / ((double)CLOCKS_PER_SEC)))));
 	}

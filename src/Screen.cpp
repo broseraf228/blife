@@ -17,6 +17,8 @@ extern bool pause;
 extern int step;
 extern clock_t start_graphic, end_graphic, start_world, end_world;
 
+extern World* lWorld;
+
 
 Screen::Screen(std::string name, World* world)
 {
@@ -92,11 +94,14 @@ void Screen::drawWorld()
 		}
 		break;
 	case 1:
+		for (int i = 0; i < bitleSize; i++) {
+			if (beetls[i].m_energy > max) max = beetls[i].m_energy;
+		}
 
 		for (int i = 0; i < bitleSize; i++)
 		{
-			color = beetls[i].m_energy / 2;
-			addBeetleToGraphicArray(&((*m_beetlsList)[i]), sf::Color(255, color, color, 200));
+			color = (beetls[i].m_energy) / max * 100;
+			addBeetleToGraphicArray(&((*m_beetlsList)[i]), sf::Color(255, color, 0, 200));
 		}
 		break;
 	case 2:
@@ -145,6 +150,8 @@ void Screen::drawBeetleStat(Beetle* beetle) {
 	string.append("\n");
 	string.append("pX= " + std::to_string(lbeetle.m_pos_x) + "\n");
 	string.append("pY= " + std::to_string(lbeetle.m_pos_y) + "\n");
+	string.append("vX= " + std::to_string(lbeetle.m_vec_x) + "\n");
+	string.append("vY= " + std::to_string(lbeetle.m_vec_y) + "\n");
 	string.append("energy= " + std::to_string(lbeetle.m_energy) + "\n");
 	string.append("age= " + std::to_string(lbeetle.m_age) + "\n");
 
@@ -162,6 +169,7 @@ void Screen::drawSystem() {
 	std::string string = "";
 
 	string.append("timing: " + std::to_string(timing) + "\n");
+	//string.append("threads: " + std::to_string((*lWorld).getThreadCount()) + "\n");
 	string.append("step: " + std::to_string(step) + "\n");
 	string.append("beetls: " + std::to_string((*m_world).getBeetlsList()->size()) + "\n");
 	string.append("world time: " + std::to_string(((double)end_world - start_world) / ((double)CLOCKS_PER_SEC)) + "\n");
@@ -171,7 +179,7 @@ void Screen::drawSystem() {
 	m_window.draw(text);
 
 
-	string = std::string("LMB - select bot\nF1 - default mode\nF2 - energy mode\nF3 - age mode\nW - don't draw workd\n\n0-3 : fotosinthes\n4-7 : move\n8-11 : rotate\n12-12 : clone\n13-15 : hunt\n21 - if on top  ");
+	string = std::string("LMB - select bot\nSpace - pause\nF1 - default mode\nF2 - energy mode\nF3 - age mode\nW - don't draw workd\n\n0-3 : fotosinthes\n4-7 : move\n8-11 : rotate\n12-12 : clone\n13-15 : hunt\n21 - if on top  ");
 	text.setPosition(sf::Vector2f(m_screen_size_x + 200, 0));
 	text.setString(string);
 	m_window.draw(text);

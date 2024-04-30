@@ -15,6 +15,8 @@ add_executable(${PROJECT_NAME}
 				src/World.cpp
 				src/Beetl.hpp
 				src/Beetl.cpp
+				src/NeuroNet.hpp
+				src/NeuroNet.cpp
 				)
 
 include(FetchContent)
