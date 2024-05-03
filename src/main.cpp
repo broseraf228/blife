@@ -9,17 +9,17 @@
 #include "Beetl.hpp"
 #include <SFML/Graphics.hpp>
 
-//TODO: починить систему координат; помянять команды генома полностью  
+//TODO: добавить жизни в жуков(написать действия для команд генома); почениеть размножение
 
 int WINDOW_SIZE_X = 1600;
 int WINDOW_SIZE_Y = 800;
-int WORLD_SIZE_X = 1600;
-int WORLD_SIZE_Y = 1200;
+int WORLD_SIZE_X = 1200;
+int WORLD_SIZE_Y = 800;
 std::string CURRENT_FOLDER;
 int step = 0; float mouseX = 0; float mouseY = 0;
 bool pause = false;
 bool display_world = true;
-int timing = 5;
+int timing = 50;
 
 
 int selectedBeetlID = 0;
@@ -33,13 +33,13 @@ void statisticDraw();
 int main(int argc, char* argv[])
 {
 	std::cout << "settings" << std::endl;
-	std::cout << "\t fullscreen? (y/n) > ";
-	std::string ans;
-	std::cin >> ans;
-	if (ans == "y") {
-		WINDOW_SIZE_X = sf::VideoMode::getDesktopMode().width;
-		WINDOW_SIZE_Y = sf::VideoMode::getDesktopMode().height;
-	}
+	//std::cout << "\t fullscreen? (y/n) > ";
+	//std::string ans;
+	//std::cin >> ans;
+	//if (ans == "y") {
+	//	WINDOW_SIZE_X = sf::VideoMode::getDesktopMode().width;
+	//	WINDOW_SIZE_Y = sf::VideoMode::getDesktopMode().height;
+	//}
 
 
 	std::cout <<"initialization" << std::endl;
@@ -66,9 +66,10 @@ int main(int argc, char* argv[])
 	std::cout << "\tcomplete" << std::endl;
 	std::cout << "complete" << std::endl;
 
-	for (int i = 0; i < 5000; i++) {
-		world.addBeetle(rand() % WORLD_SIZE_X, rand() % WORLD_SIZE_Y, 1, 0, float(rand() % 10)/10.0-0.5, float(rand() % 10) / 10.0 - 0.5, 100, std::vector<short>(64,0));
-	}
+	//for (int i = 0; i < 3; i++) {
+		//world.addBeetle(rand() % WORLD_SIZE_X, rand() % WORLD_SIZE_Y, 1, 0, float(rand() % 10)/10.0-0.5, float(rand() % 10) / 10.0 - 0.5, 100, std::vector<short>(64,0));
+	//}
+	world.addBeetle(WORLD_SIZE_X / 2, 20, 1, 0, 0, 0, 100, std::vector<short>(96, 0));
 
 	while (window.isOpen())
 	{

@@ -29,8 +29,7 @@ public:
 
 	Beetle* findById(int id);
 	Beetle* findNearest(float x, float y);
-	Beetle* findNearest(float x, float y, Beetle* beetle);
-	bool checkPlace(Beetle* beetle, float x, float y);
+	bool checkPlace(float x, float y);
 	bool checkBeetleLifeStatus(int id);
 
 	float photosynthes(Beetle* target);
@@ -43,9 +42,12 @@ public:
 	int m_size_x; int m_size_y;
 private:
 	int id_counter{ 1 }, beetle_for_thread{ 500 }; std::atomic<int> thread_count{ 0 };
-	std::vector<Beetle> m_beetlsList; std::vector<Beetle> m_tmpBeetlsList;
+	std::vector<Beetle> m_beetlsList;
 	std::vector<Beetle> m_newBeetlsList;
 	std::vector<Beetle*> m_killBeetlsList;
+
+	void checkNewBeetleList();
+	void killBeetles();
 
 	std::vector<std::thread> m_threadList;
 };

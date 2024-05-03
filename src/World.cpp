@@ -17,33 +17,44 @@ World::World(int size_x, int size_y)
 
 void World::addBeetle(float x, float y)
 {
+	worldMtx.lock();
 	m_newBeetlsList.push_back(Beetle{ x, y});
 	m_newBeetlsList[m_newBeetlsList.size() - 1].setWorld(this);
 	m_newBeetlsList[m_newBeetlsList.size() - 1].setID(id_counter++);
+	worldMtx.unlock();
 }
 void World::addBeetle(float x, float y, float rx, float ry)
 {
+	worldMtx.lock();
 	m_newBeetlsList.push_back(Beetle{ x, y, rx, ry});
 	m_newBeetlsList[m_newBeetlsList.size() - 1].setWorld(this);
 	m_newBeetlsList[m_newBeetlsList.size() - 1].setID(id_counter++);
+	worldMtx.unlock();
 }
 void World::addBeetle(float x, float y, float rx, float ry, std::vector<short> i_genome)
 {
+	worldMtx.lock();
 	m_newBeetlsList.push_back(Beetle{ x, y, rx, ry, i_genome });
 	m_newBeetlsList[m_newBeetlsList.size() - 1].setWorld(this);
 	m_newBeetlsList[m_newBeetlsList.size() - 1].setID(id_counter++);
+	worldMtx.unlock();
 }
 void World::addBeetle(float x, float y, float rx, float ry, int energy, std::vector<short> i_genome)
 {
+	worldMtx.lock();
 	m_newBeetlsList.push_back(Beetle{ x, y, rx, ry, i_genome });
 	m_newBeetlsList[m_newBeetlsList.size() - 1].m_energy = energy;
 	m_newBeetlsList[m_newBeetlsList.size() - 1].setWorld(this);
 	m_newBeetlsList[m_newBeetlsList.size() - 1].setID(id_counter++);
+	worldMtx.unlock();
 }
-void World::addBeetle(float x, float y, float rx, float ry, float vx, float vy, int energy, std::vector<short> i_genome) {
+void World::addBeetle(float x, float y, float rx, float ry, float vx, float vy, int energy, std::vector<short> i_genome) 
+{
+	worldMtx.lock();
 	m_newBeetlsList.push_back(Beetle{ x, y, rx, ry, vx, vy, i_genome, this });
 	m_newBeetlsList[m_newBeetlsList.size() - 1].m_energy = energy;
 	m_newBeetlsList[m_newBeetlsList.size() - 1].setID(id_counter++);
+	worldMtx.unlock();
 }
 
 void World::killBeetle(Beetle* target) {
@@ -60,7 +71,7 @@ float World::statistic(int type) {
 	}
 }
 int World::getThreadCount() {
-	return m_threadList.size();
+	return thread_count;
 }
 
 Beetle* World::findById(int id) {
@@ -75,46 +86,31 @@ Beetle* World::findById(int id) {
 
 }
 Beetle* World::findNearest(float x, float y){
-	x = int(x) % m_size_x;
-	float min = 999999 ;
-	Beetle* nearest = nullptr;
-	for (int i = 0; i < m_beetlsList.size(); i++) {
-		if (sqrt(pow(x - m_beetlsList[i].m_pos_x, 2) + pow(y - m_beetlsList[i].m_pos_y, 2)) < min) {
-			min = sqrt(pow(x - m_beetlsList[i].m_pos_x, 2) + pow(y - m_beetlsList[i].m_pos_y, 2));
-			nearest = &(m_beetlsList[i]);
-		}
-	}
-	return nearest;
-	
-}
-Beetle* World::findNearest(float x, float y, Beetle* beetle) {
-	x = int(x) % m_size_x;
+	x = getCordX(x);
 	float min = 999999;
 	Beetle* nearest = nullptr;
 	for (int i = 0; i < m_beetlsList.size(); i++) {
-		if (beetle == &(m_beetlsList[i])) continue;
-		if (pow(x - m_beetlsList[i].m_pos_x, 2) + pow(y - m_beetlsList[i].m_pos_y, 2) < min) {
+		if (pow(x - m_beetlsList[i].m_pos_x,2) + pow(y - m_beetlsList[i].m_pos_y,2) < min) {
 			min = pow(x - m_beetlsList[i].m_pos_x, 2) + pow(y - m_beetlsList[i].m_pos_y, 2);
 			nearest = &(m_beetlsList[i]);
 		}
 	}
 	return nearest;
-
 }
 
-bool World::checkPlace(Beetle* beetle, float x, float y)
+bool World::checkPlace(float x, float y)
 {
 	if ((y > m_size_y) || y < 0)
 		return false;
 	x = getCordX(x);
 
-	for (int i = 0; i < m_beetlsList.size(); i++) {
-		if (&(m_beetlsList[i]) == beetle) continue;
+	Beetle* nearest = findNearest(x, y);
+	if (nearest == nullptr)
+		return true;
+	float nearestdist = (*nearest).getDistanceTo(x, y);
 
-		float a = pow(x - m_beetlsList[i].m_pos_x, 2) + pow(y - m_beetlsList[i].m_pos_y, 2);
-		if (a < (*beetle).m_size + m_beetlsList[i].m_size)
-			return false;
-	}
+	if (nearestdist < 10)
+		return false;
 	return true;
 }
 bool World::checkBeetleLifeStatus(int id){
@@ -128,7 +124,7 @@ bool World::checkBeetleLifeStatus(int id){
 
 float World::photosynthes(Beetle* target){
 	float outputEnergy;
-	outputEnergy = pow((WORLD_SIZE_Y - float((*target).m_pos_y)) / WORLD_SIZE_Y , 2) * 20;
+	outputEnergy = pow((WORLD_SIZE_Y - float((*target).m_pos_y)) / WORLD_SIZE_Y , 2) * 10;
 	if (outputEnergy < 0) outputEnergy = 0;
 	return outputEnergy;
 }
@@ -140,7 +136,7 @@ void World::updateBeetls() {
 		if ((i + 1) * beetle_for_thread > m_beetlsList.size())
 			size = m_beetlsList.size() - i * beetle_for_thread;
 
-		m_threadList.push_back(std::thread( & World::updateBeetlsThread, this, start, size));
+		m_threadList[i] = (std::thread(&World::updateBeetlsThread, this, start, size));
 	}
 	for (int i = 0; i < m_threadList.size(); i++)
 		m_threadList[i].join();
@@ -157,23 +153,45 @@ void World::update()
 	if (m_beetlsList.size() % beetle_for_thread > 0)
 		thread_count++;
 
+	while (m_threadList.size() < thread_count)
+		m_threadList.push_back(std::thread());
+
 	updateBeetls();
 	m_threadList.clear();
-	//-----updating beetles-----
 
 
-	for (int i = 0; i < m_killBeetlsList.size(); i++)
+	for (int i = 0; i < m_killBeetlsList.size(); i++){
 		for (int j = 0; j < m_beetlsList.size(); j++) {
 			if (&(m_beetlsList[j]) == m_killBeetlsList[i])
 				m_beetlsList.erase(m_beetlsList.begin() + j);
 		}
+		}
 	m_killBeetlsList.clear();
-
 	
-
+	//checkNewBeetleList();
 	m_beetlsList.insert(m_beetlsList.end(), m_newBeetlsList.begin(), m_newBeetlsList.end());
 	m_newBeetlsList.clear();
 
+}
+
+void World::killBeetles(){
+	
+}
+void World::checkNewBeetleList() {
+	std::vector<Beetle*> m_tmpBeetlsList;
+	for (int i = 0; i < m_newBeetlsList.size(); i++) {
+		for (int j = 0; j < m_newBeetlsList.size(); j++) {
+			if (i == j) continue;
+			if ((m_newBeetlsList[i].m_pos_x == m_newBeetlsList[j].m_pos_x) && (m_newBeetlsList[i].m_pos_y == m_newBeetlsList[j].m_pos_y))
+				m_killBeetlsList.push_back(&(m_newBeetlsList[i]));
+		}
+	}
+	for (int i = 0; i < m_killBeetlsList.size(); i++)
+		for (int j = 0; j < m_newBeetlsList.size(); j++) {
+			if (&(m_newBeetlsList[j]) == m_killBeetlsList[i])
+				m_newBeetlsList.erase(m_newBeetlsList.begin() + j);
+		}
+	m_killBeetlsList.clear();
 }
 
 std::vector<Beetle>* World::getBeetlsList()
@@ -183,6 +201,8 @@ std::vector<Beetle>* World::getBeetlsList()
 
 float World::getCordX(float x){
 	if (x < 0)
-		return (this->m_size_x + x);
-	return (int(x) % this->m_size_x);
+		return (m_size_x + x);
+	if (x > m_size_x)
+		return (x - m_size_x);
+	return (x);
 }

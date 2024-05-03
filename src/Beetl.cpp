@@ -9,7 +9,7 @@ extern int WORLD_SIZE_Y;
 extern std::mutex worldMtx;
 
 std::vector<short> defaultGenome(96, 0);
-std::vector<short> genomeCommands{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,20,21,22,23};
+std::vector<short> genomeCommands{0,1,2,3,4,5};
 
 Beetle::Beetle(float x, float y) {
 	m_pos_x = x; m_pos_y = y; m_rot_x = 1; m_rot_y = 0;
@@ -46,114 +46,119 @@ void Beetle::moveByVec() {
 
 void Beetle::update()
 {
-	if (m_energy <= 0)
+	if (m_energy <= 0) {
 		(*m_world).killBeetle(this);
+		return;
+	}
 	World& world = (*m_world);
-	float Npx = m_pos_x, Npy = m_pos_y, Nrx = m_rot_x, Nry = m_rot_y, Nvx = m_vec_x, Nvy = m_vec_y, Nen = m_energy;
-	//beetle work
-	Npx = getCordX(Npx + Nvx);
-	if (Npy + Nvy < 0 || Npy + Nvy > WORLD_SIZE_Y)
-		Nvy = Nvy * -1;
-	Npy += Nvy;
+	n_pos_x = m_pos_x, n_pos_y = m_pos_y, n_rot_x = m_rot_x, n_rot_y = m_rot_y, n_vec_x = m_vec_x, n_vec_y = m_vec_y, n_energy = m_energy, n_genomeCounter = m_genomeCounter;
+	//beetle mov ****************************************************
+	if (n_pos_y + n_vec_y < 0 || n_pos_y + n_vec_y > WORLD_SIZE_Y)
+		n_vec_y = n_vec_y * -1;
+	if((*m_world).checkPlace(getCordX(n_pos_x + n_vec_x), n_pos_y + n_vec_y)){
+		n_pos_x = getCordX(n_pos_x + n_vec_x);
+		n_pos_y += n_vec_y;
+	}
+	else {
+		n_vec_x = 0; n_vec_y = 0;
+	}
+	//genome *********************************
+	short cnt = 3; short command;
 
-	Nen += world.photosynthes(this);
-	Nen -= pow(m_age/100 + 1, 2);
+BUGB:
+	command = getGenComm(n_genomeCounter);
+	if (--cnt = 0) goto BUGE;
 
-	world.findNearest(Npx + Nrx, Npy + Nry, this);
+	if (command == 0) {
+		n_energy += (*m_world).photosynthes(this);
+		n_genomeCounter = (n_genomeCounter + 1)%m_genome.size();
+		goto BUGE;
+	}
+	if (command == 1) {
+		move((getGenComm(n_genomeCounter+1) + m_size) / 10);
+		n_genomeCounter = (n_genomeCounter + 1) % m_genome.size();
+		goto BUGE;
+	}
+	if (command == 2) {
+		rotate((getGenComm(n_genomeCounter + 1)) / 100);
+		n_genomeCounter = (n_genomeCounter + 1) % m_genome.size();
+		goto BUGE;
+	}
+	n_genomeCounter = (n_genomeCounter + 1) % m_genome.size();
+	goto BUGE;
+BUGE:
 
-	// edit data
+	//energy **********************************
+	n_energy -= pow(m_age / 100 + 1, 2);
+
+	if (n_energy > 300){
+		clone(100, m_size);
+	}
+
+	// edit data *****************************************************
 	worldMtx.lock();
 	m_age++;
-	m_pos_x = Npx; m_pos_y = Npy;
-	m_rot_x = Nrx; m_rot_y = Nry;
-	m_vec_x = Nvx; m_vec_y = Nvy;
-	m_energy = Nen;
+	m_pos_x = n_pos_x; m_pos_y = n_pos_y;
+	m_rot_x = n_rot_x; m_rot_y = n_rot_y;
+	m_vec_x = n_vec_x; m_vec_y = n_vec_y;
+	m_energy = n_energy;
+	m_genomeCounter = n_genomeCounter;
 	worldMtx.unlock();
 }
 
 
 void Beetle::clone(int energy, float range) {
+	n_energy -= energy;
+	if (n_energy < energy)
+		return;
+	std::vector<short> tmp_genome;
 
-	if (energy > m_energy) return;
-
-	float nx, ny;
-	for (int angle = -2; angle < 3; angle++){
-		
-		nx = m_rot_x * cos(angle) - m_rot_y * sin(angle);
-		ny = m_rot_x * sin(angle) + m_rot_y * cos(angle);
-
-		if ((*m_world).checkPlace(this, (*m_world).getCordX(m_pos_x - (nx * range)), m_pos_y - (ny * range)))
-			goto HH2;
+	float nx = n_rot_x, ny = n_rot_y;
+	float dx, dy; int r = rand() % 8;
+	for (int i = 0; i < 4; i++) {
+		r = rand() % 8;
+		//std::cout << r << "\n";
+		dx = nx * cos(r * 45) + ny * sin(r * 45);
+		dy = nx * sin(r * 45) + ny * cos(r * 45);
+		if (!(*m_world).checkPlace(n_pos_x + dx * range, n_pos_y + dy * range))
+			continue;
+		goto BCC;
 	}
-	//-----if not cloning------
-	if (rand() % 4 == 0) {
-		int rn = rand() % m_genome.size();
-		m_genome[rn] = (m_genome[rn] + (rand() % 4) -2) % m_genome.size();
-	}
-	m_energy -= energy / 4;
+	goto BCE;
 
-	return;
-HH2:
-	//------if cloning------
-
-	//mutations--->>>
-	auto n_genome = m_genome;
-
-	if(rand() % 2 == 0)
-		if(rand() % 4 != 0)
-			n_genome[rand() % n_genome.size()] = genomeCommands[rand() % genomeCommands.size()];
-		else
-			n_genome[rand() % n_genome.size()] += fabs(( rand() % m_genome.size() + m_genome.size()-1));
-
-	//cloning
+BCC:
+	//-----cloning-----
+	tmp_genome = m_genome;
 	
+	if (rand() % 3 != 0) {
+		tmp_genome[rand() % tmp_genome.size()] = rand() % genomeCommands.size();
+	}
 
 	(*m_world).addBeetle(
-	    (*m_world).getCordX( m_pos_x - nx * range),
-		m_pos_y - ny * range,
-		m_rot_x,
-		m_rot_y,
+		n_pos_x + dx * range,
+		n_pos_y + dy * range,
+		n_rot_x,
+		n_rot_y,
 		energy,
-		n_genome);
-	m_energy -= energy;
+		tmp_genome);
 
-	
+BCE:
+	return;
 }
-void Beetle::clone(int energy, float range, bool kill) {
-
-	if (energy > m_energy) return;
-
-	float nx = 0; float ny = 0;
-	for (int i = 0; i < 8; i++) {
-		nx = m_rot_x * cos(90) - m_rot_y * sin(90);
-		ny = m_rot_x * sin(90) + m_rot_y * cos(90);
-		m_rot_x = nx; m_rot_y = ny;
-		if (!(*m_world).checkPlace(this, m_pos_x + nx * range, m_pos_y + ny * range))
-			continue;
-		else {
-			//mutations--->>>
-			auto n_genome = m_genome;
-
-			if (rand() % 2 == 0)
-				n_genome[rand() % n_genome.size()] = genomeCommands[rand() % genomeCommands.size()];
-			else
-				n_genome[rand() % n_genome.size()] = rand() % m_genome.size() * 2;
-			///
-
-			(*m_world).addBeetle(
-				m_pos_x + nx * range * 0.9,
-				m_pos_y + ny * range * 0.9,
-				m_rot_x,
-				m_rot_y,
-				energy,
-				n_genome);
-			m_energy -= energy;
-			return;
-		}
-	}
-
+void Beetle::move(float force){
+	n_energy -= force;
+	n_vec_x += n_rot_x * force;
+	n_vec_y += n_rot_y * force;
+}
+void Beetle::rotate(float angle){
+	float nx = n_rot_x, ny = n_rot_y;
+	n_rot_x = nx * cos(angle) + ny * sin(angle);
+	n_rot_y = nx * sin(angle) + ny * cos(angle);
 }
 
+float Beetle::getDistanceTo(float x, float y) {
+	return(sqrt(pow(m_pos_x - x, 2) + pow(m_pos_y - y, 2)));
+}
 
 short Beetle::getGenComm(short ctr) {
 	return m_genome[ctr % m_genome.size()];

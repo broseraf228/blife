@@ -90,7 +90,7 @@ void Screen::drawWorld()
 	case 0:
 		for (int i = 0; i < bitleSize; i++)
 		{
-			addBeetleToGraphicArray(&((*m_beetlsList)[i]), sf::Color(100,200,100,200));
+			addBeetleToGraphicArray(&((*m_beetlsList)[i]), sf::Color(100,200,100,150));
 		}
 		break;
 	case 1:
@@ -169,7 +169,7 @@ void Screen::drawSystem() {
 	std::string string = "";
 
 	string.append("timing: " + std::to_string(timing) + "\n");
-	//string.append("threads: " + std::to_string((*lWorld).getThreadCount()) + "\n");
+	string.append("threads: " + std::to_string((*lWorld).getThreadCount()) + "\n");
 	string.append("step: " + std::to_string(step) + "\n");
 	string.append("beetls: " + std::to_string((*m_world).getBeetlsList()->size()) + "\n");
 	string.append("world time: " + std::to_string(((double)end_world - start_world) / ((double)CLOCKS_PER_SEC)) + "\n");

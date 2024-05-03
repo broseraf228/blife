@@ -20,7 +20,10 @@ public:
 	void moveByVec();
 
 	void clone(int energy, float range);
-	void clone(int energy, float range, bool kill);
+	void move(float force);
+	void rotate(float angle);
+
+	float getDistanceTo(float x, float y);
 
 	float m_pos_x, m_pos_y, m_rot_x, m_rot_y, m_vec_x, m_vec_y;
 
@@ -32,6 +35,8 @@ public:
 	int m_size{ 10 };
 	int m_id{ 0 };
 private:
+	float n_pos_x, n_pos_y, n_rot_x, n_rot_y, n_vec_x, n_vec_y;
+	int n_genomeCounter{ 0 }; float n_energy{ 100 };
 	float getCordX(float x);
 	short getGenComm(short ctr);
 	World* m_world;
